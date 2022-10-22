@@ -8,9 +8,7 @@ OBJS = \
   $K/console.o \
   $K/printf.o \
   $K/uart.o \
-  $K/kalloc.o \
   $K/spinlock.o \
-  $K/string.o \
   $K/main.o \
   $K/vm.o \
   $K/proc.o \
@@ -18,7 +16,6 @@ OBJS = \
   $K/trampoline.o \
   $K/trap.o \
   $K/syscall.o \
-  $K/sysproc.o \
   $K/bio.o \
   $K/fs.o \
   $K/log.o \
@@ -109,10 +106,24 @@ CFLAGS += -I $K/lwip -I $(LWIP)/include
 
 LDFLAGS = -z max-page-size=4096
 
-$K/kernel: $(OBJS) $K/kernel.ld $U/initcode
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS)
+# Value for rustc's --target option.
+RUST_TARGET = riscv64gc-unknown-none-elf
+RUST_OUTPUT_DIR = osmium/target/$(RUST_TARGET)/release
+RUST_KERNEL = $(RUST_OUTPUT_DIR)/libxv6_kernel.a
+
+$K/kernel: $(OBJS) $K/kernel.ld $U/initcode $(RUST_KERNEL)
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(RUST_KERNEL)
 	$(OBJDUMP) -S $K/kernel > $K/kernel.asm
 	$(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
+
+$(RUST_OUTPUT_DIR)/lib%.a: .FORCE
+	cd osmium && cargo build --release -p $*
+
+# The .FORCE dependency causes a target to be rebuilt in every build. This
+# should be used for building Rust targets because cargo handles rebuilding out
+# of date files.
+.PHONY: .FORCE
+.FORCE:
 
 $U/initcode: $U/initcode.S
 	$(CC) $(CFLAGS) -march=rv64g -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
@@ -124,6 +135,17 @@ tags: $(OBJS) _init
 	etags *.S *.c
 
 ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
+
+RUST_UPROGS = \
+	$U/_hellorust\
+	$U/_cat\
+	$U/_echo\
+	$U/_uptime\
+
+$(RUST_UPROGS): $U/_%: $(ULIB) $(RUST_OUTPUT_DIR)/lib%.a
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
+	$(OBJDUMP) -S $@ > $*.asm
+	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
@@ -155,10 +177,10 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 .PRECIOUS: %.o
 
+
+
 UPROGS=\
 	$U/_lazytests\
-	$U/_cat\
-	$U/_echo\
 	$U/_forktest\
 	$U/_grep\
 	$U/_init\
@@ -181,13 +203,15 @@ UPROGS=\
 	$U/_specialtest\
 	# $U/_symlinktest\
 
-fs.img: mkfs/mkfs README user/xargstest.sh $(UPROGS)
-	mkfs/mkfs fs.img README user/xargstest.sh $(UPROGS)
+
+fs.img: mkfs/mkfs README user/xargstest.sh $(UPROGS) $(RUST_UPROGS)
+	mkfs/mkfs fs.img README user/xargstest.sh $(UPROGS) $(RUST_UPROGS)
 
 -include kernel/*.d user/*.d
 -include lwip/api/*.d lwip/core/*.d lwip/core/ipv4/*.d lwip/netif/*.d
 
 clean:
+	cd osmium && cargo clean
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*/*.o */*.d */*.asm */*.sym \
 	$(LWIP)/*/*.o $(LWIP)/*/*.d \

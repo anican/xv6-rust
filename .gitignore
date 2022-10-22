@@ -23,3 +23,10 @@ xv6.out*
 .vagrant/
 submissions/
 conf/LAB
+
+#Rust artifacts
+osmium/target
+osmium/xv6_user/*/target/
+osmium/xv6_defs/target/
+osmium/xv6_kernel/target/
+

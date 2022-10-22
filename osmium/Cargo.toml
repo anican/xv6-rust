@@ -1,0 +1,21 @@
+[workspace]
+
+members = [
+    "xv6_defs",
+    "xv6_kernel",
+    "xv6_user/xv6_ulib",
+    "xv6_user/hellorust",
+    "xv6_user/echo",
+    "xv6_user/cat",
+    "xv6_user/uptime"
+]
+
+[profile.release]
+# The following options reduce the size of the generated binary. Files in xv6
+# can only be a certain size, and many of Rust's features cause binaries to
+# exceed this size.
+overflow-checks = false
+opt-level = "z"
+debug = false
+debug-assertions = false
+lto = true
