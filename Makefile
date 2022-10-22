@@ -108,7 +108,7 @@ LDFLAGS = -z max-page-size=4096
 
 # Value for rustc's --target option.
 RUST_TARGET = riscv64gc-unknown-none-elf
-RUST_OUTPUT_DIR = rustcomps/target/$(RUST_TARGET)/release
+RUST_OUTPUT_DIR = osmium/target/$(RUST_TARGET)/release
 RUST_KERNEL = $(RUST_OUTPUT_DIR)/libxv6_kernel.a
 
 $K/kernel: $(OBJS) $K/kernel.ld $U/initcode $(RUST_KERNEL)
@@ -117,7 +117,7 @@ $K/kernel: $(OBJS) $K/kernel.ld $U/initcode $(RUST_KERNEL)
 	$(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
 
 $(RUST_OUTPUT_DIR)/lib%.a: .FORCE
-	cd rustcomps && cargo build --release -p $*
+	cd osmium && cargo build --release -p $*
 
 # The .FORCE dependency causes a target to be rebuilt in every build. This
 # should be used for building Rust targets because cargo handles rebuilding out
@@ -211,7 +211,7 @@ fs.img: mkfs/mkfs README user/xargstest.sh $(UPROGS) $(RUST_UPROGS)
 -include lwip/api/*.d lwip/core/*.d lwip/core/ipv4/*.d lwip/netif/*.d
 
 clean:
-	cd rustcomps && cargo clean
+	cd osmium && cargo clean
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
 	*/*.o */*.d */*.asm */*.sym \
 	$(LWIP)/*/*.o $(LWIP)/*/*.d \
