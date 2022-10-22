@@ -1,0 +1,13 @@
+[package]
+name = "xv6_kernel"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["staticlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+xv6_defs = { path = "../xv6_defs" }
+panic-halt = "^0.2.0"
