@@ -1,7 +1,11 @@
 # Building `xv6-rust`
 ## Installing `xv6` dependencies
-...
-TODO (qemu)
+You will first need to build standard xv6. To do so, we need the qemu emulator and riscv toolchains. 
+For Ubuntu,
+```bash
+$ apt-get install git build-essential gdb-multiarch
+$ apt-get install qemu-system-misc gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
+```
 
 ## Install Rust
 Install [`rustup`](https://rustup.rs/). This can be done by running
@@ -19,14 +23,9 @@ rustup target add riscv64gc-unknown-none-elf
 This allows building for the riscv platform.
 
 Now, in the final project directory, if building from `git`, first checkout the
-`xv6-rust` branch.
+`main` branch.
 ```bash
-git checkout xv6-rust
-```
-
-If building on `attu`, add the riscv tools to your path
-```bash
-export PATH="/cse/courses/cse451/21au/riscv/bin:$PATH"
+git checkout main
 ```
 
 Then you can build and run `xv6` like normal.
